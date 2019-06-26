@@ -21,13 +21,13 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 #VEHICLE
-DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 21      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|MOCK)
-IMAGE_W = 160
-IMAGE_H = 120
+CAMERA_TYPE = "LEOPARD" # (PICAM|WEBCAM|CVCAM|CSIC|V4L|MOCK|LEOPARD)
+IMAGE_W = 224
+IMAGE_H = 224
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
@@ -36,8 +36,8 @@ CAMERA_HFLIP = False
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 
 #9865, over rides only if needed, ie. TX2..
-PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
-PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
+PCA9685_I2C_ADDR = 0x40     # I2C address, use i2cdetect to validate this number
+PCA9685_I2C_BUSNUM = 0      # None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
 #SSD1306_128_32
 USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
@@ -102,14 +102,6 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
-#Pi login information
-#When using the continuous train option, these credentials will
-#be used to copy the final model to your vehicle. If not using this option, no need to set these.
-PI_USERNAME = "pi"                  # username on pi
-PI_PASSWD = "raspberry"             # password is optional. Only used from Windows machine. Ubuntu and mac users should copy their public keys to the pi. `ssh-copy-id username@hostname`
-PI_HOSTNAME = "raspberrypi.local"   # the network hostname or ip address
-PI_DONKEY_ROOT = "/home/pi/mycar"   # the location of the mycar dir on the pi. this will be used to help locate the final model destination.
-
 # Region of interst cropping
 # only supported in Categorical and Linear models.
 # If these crops values are too large, they will cause the stride values to become negative and the model with not be valid.
@@ -128,10 +120,10 @@ USE_JOYSTICK_AS_DEFAULT = False     #when starting the manage.py, when True, wil
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE='ps3'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
+CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
-NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
-JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
+NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
+JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
 JOYSTICK_THROTTLE_DIR = -1.0        # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 USE_FPV = False                     # send camera data to FPV webserver
 

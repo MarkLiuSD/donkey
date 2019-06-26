@@ -114,6 +114,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "LEOPARD":
+            from donkeycar.parts.leopard_imaging import LICamera
+            cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
