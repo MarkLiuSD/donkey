@@ -105,9 +105,9 @@ class OLEDPart(object):
             self.num_records = num_records
 
         if recording:
-            self.recording = 'YES (Records = %s)' % (self.num_records)
+            self.recording = 'YES (%s)' % (num_records)
         else:
-            self.recording = 'NO (Records = %s)' % (self.num_records)
+            self.recording = 'NO'
 
         self.user_mode = 'User Mode (%s)' % (user_mode)
         self.update()
