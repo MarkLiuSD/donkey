@@ -23,7 +23,7 @@ import donkeycar as dk
 
 #import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
-from donkeycar.parts.datastore import TubHandler
+from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.controller import LocalWebController, \
     JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
@@ -553,9 +553,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
     
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    tub_writer = TubWriter(cfg.DATA_PATH, inputs=inputs, types=types, metadata=meta)
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
@@ -568,23 +567,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         print("You can now go to <your pis hostname.local>:8887 to drive your car.")
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
-        #tell the controller about the tub        
-        ctr.set_tub(tub)
-        
-        if cfg.BUTTON_PRESS_NEW_TUB:
-    
-            def new_tub_dir():
-                V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
-                ctr.set_tub(tub)
-    
-            ctr.set_button_down_trigger('cross', new_tub_dir)
         ctr.print_controls()
 
     #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
-            max_loop_count=cfg.MAX_LOOPS)
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
