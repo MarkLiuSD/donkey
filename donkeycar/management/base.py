@@ -1,18 +1,19 @@
 
-import sys
-import os
-import socket
-import shutil
 import argparse
 import json
+import os
+import shutil
+import socket
+import sys
 import time
 
+import numpy as np
+
 import donkeycar as dk
+from donkeycar.management.joystick_creator import CreateJoystick
+from donkeycar.management.tub import TubManager
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from donkeycar.management.tub import TubManager
-from donkeycar.management.joystick_creator import CreateJoystick
-import numpy as np
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -479,20 +480,21 @@ class ShowPredictionPlots(BaseCommand):
             model_type = cfg.DEFAULT_MODEL_TYPE
         model.load(model_path)
 
-        records = gather_records(cfg, tub_paths)
         user_angles = []
         user_throttles = []
         pilot_angles = []
         pilot_throttles = []       
 
-        records = records[:limit]
-        num_records = len(records)
-        print('processing %d records:' % num_records)
+        from donkeycar.parts.tub_v2 import Tub
+        from pathlib import Path
 
-        for record_path in records:
-            with open(record_path, 'r') as fp:
-                record = json.load(fp)
-            img_filename = os.path.join(tub_paths, record['cam/image_array'])
+        base_path = Path(os.path.expanduser(tub_paths)).absolute().as_posix()
+        tub = Tub(base_path)
+        records = list(tub)
+        records = records[:limit]
+
+        for record in records:
+            img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
             img = load_scaled_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
@@ -573,4 +575,3 @@ def execute_from_command_line():
     
 if __name__ == "__main__":
     execute_from_command_line()
-    

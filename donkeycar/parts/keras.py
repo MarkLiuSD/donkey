@@ -193,9 +193,9 @@ class KerasTransferLearning(KerasPilot):
     A Transfer learning model based on Resnet50. When using this model, you will
     need to switch to using TensorRT for performance.
     '''
-    def __init__(self, num_outputs=2, input_shape=(224, 224, 3), *args, **kwargs):
+    def __init__(self, num_outputs=2, input_shape=(224, 224, 3), roi_crop=(0, 0), *args, **kwargs):
         super(KerasTransferLearning, self).__init__(*args, **kwargs)
-        self.model = transfer_learning(num_outputs, input_shape)
+        self.model = transfer_learning(num_outputs, input_shape, roi_crop)
         self.compile()
 
     def compile(self):
@@ -359,9 +359,9 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
 def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
-    drop = 0.1
+    drop = 0.2
 
-    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    # Adjust input shape based on the region of interest.
     input_shape = adjust_input_shape(input_shape, roi_crop)
     
     img_in = Input(shape=input_shape, name='img_in')
@@ -394,8 +394,11 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
 
 
-def transfer_learning(num_outputs, input_shape=(224, 224, 3)):
+def transfer_learning(num_outputs, input_shape=(224, 224, 3), roi_crop=(0, 0)):
     from tensorflow.python.keras.applications import VGG16
+
+    # Adjust input shape based on the region of interest.
+    input_shape = adjust_input_shape(input_shape, roi_crop)
 
     base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
