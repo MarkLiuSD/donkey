@@ -170,6 +170,33 @@ class KerasLinear(KerasPilot):
 
 
 
+class KerasTransferLearning(KerasPilot):
+    '''
+    A Transfer learning model based on Resnet50. When using this model, you will
+    need to switch to using TensorRT for performance.
+    '''
+
+    from tensorflow.python.keras.applications.resnet50 import preprocess_input
+
+    def __init__(self, num_outputs=2, input_shape=(224, 224, 3), *args, **kwargs):
+        super(KerasTransferLearning, self).__init__(*args, **kwargs)
+        self.model = resnet50_transfer_learning(num_outputs, input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss='mse')
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        # Preprocess input
+        image_arr = preprocess_input(img_arr)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[0]
+        throttle = outputs[1]
+        return steering[0][0], throttle[0][0]
+
+
+
 class KerasIMU(KerasPilot):
     '''
     A Keras part that take an image and IMU vector as input,
@@ -348,6 +375,25 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
         
     model = Model(inputs=[img_in], outputs=outputs)
     
+    return model
+
+
+
+def resnet50_transfer_learning(num_outputs, input_shape=(224, 224, 3)):
+    from tensorflow.python.keras.applications import ResNet50
+
+    base_model = ResNet50(include_top=False, weights='imagenet', input_shape=input_shape)
+    for layer in base_model.layers:
+        layer.trainable = True
+
+    M = base_model.output
+    M = Dense(512, activation='relu')(M)
+
+    outputs = list()
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(M))
+
+    model = Model(inputs=base_model.input, outputs=outputs)
     return model
 
 

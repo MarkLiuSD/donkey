@@ -480,6 +480,9 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "fastai":
         from donkeycar.parts.fastai import FastAiPilot
         kl = FastAiPilot()
+    elif model_type == "transfer":
+        from donkeycar.parts.keras import KerasTransferLearning
+        kl = KerasTransferLearning(input_shape=input_shape)
     else:
         raise Exception("unknown model type: %s" % model_type)
 
