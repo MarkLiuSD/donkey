@@ -25,6 +25,8 @@ from tensorflow.python.keras.layers.merge import concatenate
 from tensorflow.python.keras.layers import LSTM
 from tensorflow.python.keras.layers.wrappers import TimeDistributed as TD
 from tensorflow.python.keras.layers import Conv3D, MaxPooling3D, Cropping3D, Conv2DTranspose
+from tensorflow.python.keras.applications.vgg16 import preprocess_input
+
 
 import donkeycar as dk
 
@@ -175,12 +177,9 @@ class KerasTransferLearning(KerasPilot):
     A Transfer learning model based on Resnet50. When using this model, you will
     need to switch to using TensorRT for performance.
     '''
-
-    from tensorflow.python.keras.applications.resnet50 import preprocess_input
-
     def __init__(self, num_outputs=2, input_shape=(224, 224, 3), *args, **kwargs):
         super(KerasTransferLearning, self).__init__(*args, **kwargs)
-        self.model = resnet50_transfer_learning(num_outputs, input_shape)
+        self.model = transfer_learning(num_outputs, input_shape)
         self.compile()
 
     def compile(self):
@@ -379,14 +378,16 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
 
 
-def resnet50_transfer_learning(num_outputs, input_shape=(224, 224, 3)):
-    from tensorflow.python.keras.applications import ResNet50
+def transfer_learning(num_outputs, input_shape=(224, 224, 3)):
+    from tensorflow.python.keras.applications import VGG16
 
-    base_model = ResNet50(include_top=False, weights='imagenet', input_shape=input_shape)
+    base_model = VGG16(include_top=False, weights='imagenet', input_shape=input_shape)
     for layer in base_model.layers:
-        layer.trainable = True
+        layer.trainable = False
 
     M = base_model.output
+    M = Flatten()(M)
+    M = Dense(1024, activation='relu')(M)
     M = Dense(512, activation='relu')(M)
 
     outputs = list()
