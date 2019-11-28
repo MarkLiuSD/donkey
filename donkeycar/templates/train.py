@@ -36,7 +36,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM, KerasLatent, KerasLocalizer
+     KerasRNN_LSTM, KerasLatent, KerasLocalizer, KerasInferred
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -401,6 +401,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             has_bvh = type(kl) is KerasBehavioral
             img_out = type(kl) is KerasLatent
             loc_out = type(kl) is KerasLocalizer
+            is_inferred = type(kl) is KerasInferred
             
             if img_out:
                 import cv2
@@ -489,6 +490,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         y = [ np.array(angles), np.array(throttles), np.array(out_loc)]
                     elif model_out_shape[1] == 2:
                         y = [np.array([out]).reshape(batch_size, 2) ]
+                    elif is_inferred:
+                        y = np.array(angles)
                     else:
                         y = [np.array(angles), np.array(throttles)]
 

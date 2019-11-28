@@ -160,8 +160,7 @@ class KerasLinear(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
-                loss='mse')
+        self.model.compile(optimizer=self.optimizer, loss='mse')
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -169,6 +168,23 @@ class KerasLinear(KerasPilot):
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
+
+
+
+class KerasInferred(KerasPilot):
+    def __init__(self, num_outputs=1, input_shape=(120, 160, 3), *args, **kwargs):
+        super(KerasInferred, self).__init__(*args, **kwargs)
+        self.model = default_n_linear(num_outputs, input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss='mse')
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[0]
+        return steering[0], dk.utils.throttle(steering[0])
 
 
 
