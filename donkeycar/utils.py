@@ -291,12 +291,13 @@ def my_ip():
 
 
 '''
-STEERING
+THROTTLE
 '''
 
 STEERING_MIN = -1.
 STEERING_MAX = 1.
-EXP_SCALING_FACTOR = 1.125
+# Scale throttle ~ 0.5 - 1.0 depending on the steering angle
+EXP_SCALING_FACTOR = 0.5
 DAMPENING = 0.05
 
 def _steering(input_value):
