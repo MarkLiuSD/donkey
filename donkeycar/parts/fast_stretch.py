@@ -86,7 +86,9 @@ def fast_stretch(image, debug=False):
 if __name__ == "__main__":
     path = Path('images/Lenna.jpg')
     image = cv2.imread(path.as_posix())
-    image_data = np.asarray(image, dtype=np.uint8)
+    # Ensure BGR
+    bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    image_data = np.asarray(bgr, dtype=np.uint8)
 
     stretched = fast_stretch(image_data, debug=True)
     cv2.imshow('Original', image)
