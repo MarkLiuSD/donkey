@@ -11,7 +11,7 @@ import numpy as np
 from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
-import sys
+import traceback
 
 
 class PartProfiler:
@@ -168,9 +168,8 @@ class Vehicle:
 
         except KeyboardInterrupt:
             pass
-        except:
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
+        except Exception as e:
+            traceback.print_exc()
         finally:
             self.stop()
 

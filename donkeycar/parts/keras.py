@@ -359,9 +359,9 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
 def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
-    drop = 0.1
+    drop = 0.2
 
-    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    # Adjust input shape based on the region of interest.
     input_shape = adjust_input_shape(input_shape, roi_crop)
     
     img_in = Input(shape=input_shape, name='img_in')

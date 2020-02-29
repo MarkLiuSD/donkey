@@ -504,7 +504,7 @@ def get_model_by_type(model_type, cfg):
         kl = FastAiPilot()
     elif model_type == "transfer":
         from donkeycar.parts.keras import KerasTransferLearning
-        kl = KerasTransferLearning(input_shape=input_shape)
+        kl = KerasTransferLearning(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "inferred":
         from donkeycar.parts.keras import KerasInferred
         kl = KerasInferred(input_shape=input_shape)

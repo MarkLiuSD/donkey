@@ -32,7 +32,7 @@ class TensorRTLinear(KerasPilot):
         uff_model = Path(model_path)
         metadata_path = Path('%s/%s.metadata' % (uff_model.parent.as_posix(), uff_model.stem))
         with open(metadata_path.as_posix(), 'r') as metadata, trt.Builder(self.logger) as builder, builder.create_network() as network, trt.UffParser() as parser:
-            
+
             builder.max_workspace_size = 1 << 20
             builder.max_batch_size = 1
             builder.fp16_mode=True
