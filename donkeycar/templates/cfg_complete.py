@@ -238,3 +238,11 @@ REALSENSE_D435_RGB = True       # True to capture RGB image
 REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
+
+#If you have the Teensy Encoder
+SERIAL_ENCODER = True 
+DRIVE_PID      = True
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+ODOM_PID_P = -0.003                 # Odometry model chases the desired vel with this pid controller, this is the P term
+ODOM_PID_I = -0.0001                # Odometry model chases the desired vel with this pid controller, this is the I term
+ODOM_PID_D = 0.0                    # Odometry model chases the desired vel with this pid controller, this is the D term

@@ -132,7 +132,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
         V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-        
+    
+    #for teensy based encoder readings
+    if cfg.SERIAL_ENCODER:
+        from donkeycar.parts.encoder_serial import SerialEncoder
+        enc = SerialEncoder(debug=False)
+        V.add(enc, outputs=["enc/rpm"], threaded=True)
+
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -141,9 +147,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             
             ctr = RoboHATController()
         else:
-            from donkeycar.parts.controller import get_js_controller
+            #from donkeycar.parts.controller import get_js_controller
+            #ctr = get_js_controller(cfg)
 
-            ctr = get_js_controller(cfg)
+            from my_joystick import MyJoystickController
+
+            ctr = MyJoystickController(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+
+            ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+
 
             if cfg.USE_NETWORKED_JS:
                 from donkeycar.parts.controller import JoyStickSub
@@ -397,14 +412,49 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
         V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
 
-        outputs=['pilot/angle', 'pilot/throttle']
+        #outputs=['pilot/angle', 'pilot/throttle']
+
+        if cfg.DRIVE_PID:
+            outputs=['pilot/angle', 'pilot/rpm']
+        else: 
+            outputs=['pilot/angle', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
     
         V.add(kl, inputs=inputs, 
             outputs=outputs,
-            run_condition='run_pilot')            
+            run_condition='run_pilot')
+
+    if cfg.DRIVE_PID:
+        class ThrottleVelControl(object):
+            '''
+            use the throttle to achieve the target vel
+            '''
+            def __init__(self, pid, max_throttle):
+                self.pid = pid
+                self.current_throttle = 0.0
+                self.max_throttle = max_throttle
+
+            def run(self, current_vel, target_vel, mode):
+                if mode != "local":
+                    return 0.0
+                target_vel = target_vel*28000
+                err = target_vel - current_vel
+                alpha = self.pid.run(err)
+                print("current_vel", current_vel, "target_vel", target_vel)
+                print("err", err, 'alpha', alpha, "self.current_throttle", self.current_throttle )
+                self.current_throttle += alpha
+                if self.current_throttle > self.max_throttle:
+                    self.current_throttle = self.max_throttle
+                elif self.current_throttle < 0.0:
+                    self.current_throttle = 0.0
+                return self.current_throttle
+
+        pid = dk.parts.transform.PIDController(p=cfg.ODOM_PID_P, i=cfg.ODOM_PID_I, d=cfg.ODOM_PID_D)
+        thc = ThrottleVelControl(pid, max_throttle=cfg.JOYSTICK_MAX_THROTTLE)
+        V.add(thc, inputs=['enc/rpm', 'pilot/rpm', 'user/mode'], outputs=['pilot/throttle'], run_condition="ai_running")
+   
     
     #Choose what inputs should change the car.
     class DriveMode:
@@ -493,48 +543,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             V.add(steering, inputs=['angle'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
 
-
-    elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
-        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-        
-        steering = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT)
-        throttle = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
-
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-    
-
-    elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
-        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
-
-        left_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD)
-        right_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD)
-        two_wheel_control = TwoWheelSteeringThrottle()
-
-        V.add(two_wheel_control, 
-                inputs=['throttle', 'angle'],
-                outputs=['left_motor_speed', 'right_motor_speed'])
-
-        V.add(left_motor, inputs=['left_motor_speed'])
-        V.add(right_motor, inputs=['right_motor_speed'])
-
-    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
-        from donkeycar.parts.actuator import ServoBlaster, PWMSteering
-        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
-        #PWM pulse values should be in the range of 100 to 200
-        assert(cfg.STEERING_LEFT_PWM <= 200)
-        assert(cfg.STEERING_RIGHT_PWM <= 200)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
-       
-
-        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-        motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
-
-        V.add(steering, inputs=['angle'], threaded=True)
-        V.add(motor, inputs=["throttle"])
-
     # OLED setup
     if cfg.USE_SSD1306_128_32:
         from donkeycar.parts.oled import OLEDPart
@@ -543,7 +551,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
     #add tub to save data
-
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
             'user/mode']
@@ -571,6 +578,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
     
+    if cfg.SERIAL_ENCODER:
+        inputs += ['enc/rpm']
+        types  += ['int']
+
     tub_writer = TubWriter(cfg.DATA_PATH, inputs=inputs, types=types, metadata=meta)
     V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 

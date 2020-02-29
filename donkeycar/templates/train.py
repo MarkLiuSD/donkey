@@ -13,6 +13,7 @@ Options:
 import os
 import random
 from pathlib import Path
+import donkeycar as dk
 
 import cv2
 import numpy as np
@@ -62,6 +63,7 @@ class TubSequence(Sequence):
         images = []
         angles = []
         throttles = []
+        rpms = []
 
         is_inferred = type(self.keras_model) is KerasInferred
 
@@ -79,17 +81,21 @@ class TubSequence(Sequence):
             image = record['cam/image_array']
             angle = record['user/angle']
             throttle = record['user/throttle']
+            rpm = record['enc/rpm']
+            
         
             images.append(image)
             angles.append(angle)
             throttles.append(throttle)
+            rpms.append(rpm/28000)
 
         X = np.array(images)
 
         if is_inferred:
             Y = np.array(angles)
         else:
-            Y = [np.array(angles), np.array(throttles)]
+            #Y = [np.array(angles), np.array(throttles)]
+            Y = [np.array(angles), np.array(rpms)]
 
         return X, Y
 

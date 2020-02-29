@@ -17,7 +17,7 @@ class Joystick(object):
     '''
     An interface to a physical joystick
     '''
-    def __init__(self, dev_fn='/dev/input/js0'):
+    def __init__(self, dev_fn='/dev/input/js1'):
         self.axis_states = {}
         self.button_states = {}
         self.axis_names = {}
@@ -650,7 +650,7 @@ class JoystickController(object):
                  throttle_scale=1.0,
                  steering_scale=1.0,
                  throttle_dir=-1.0,
-                 dev_fn='/dev/input/js0',
+                 dev_fn='/dev/input/js1',
                  auto_record_on_throttle=True):
 
         self.angle = 0.0
